@@ -31,77 +31,78 @@ enum Endpoint {
   case topHeadLines
   case articlesFromCategory(_ category: String)
   case articlesFromSource(_ source: String)
-  case search(searchFilter: String)
-  case sources(country: String)
+  case search (searchFilter: String)
+  case sources (country: String)
   
-  var baseURL: URL {URL(string: "https://newsapi.org/v2/")!}
+  var baseURL:URL {URL(string: "https://newsapi.org/v2/")!}
   
   func path() -> String {
     switch self {
     case .topHeadLines, .articlesFromCategory:
       return "top-headlines"
-    case .articlesFromSource, .search:
+    case .search,.articlesFromSource:
       return "everything"
     case .sources:
       return "sources"
     }
   }
   
-  init? (index: Int, text: String = "sports") {
-    switch index {
-    case 0:
-      self = .topHeadLines
-    case 1:
-      self = .articlesFromCategory(text)
-    case 2:
-      self = .articlesFromSource(text)
-    case 3:
-      self = .search(searchFilter: text)
-    case 4:
-      self = .sources(country: text)
-    default:
-      return nil
-    }
-  }
-  
-  var absoluteURl: URL? {
+  var absoluteURL: URL? {
     let queryURL = baseURL.appendingPathComponent(self.path())
     let components = URLComponents(url: queryURL, resolvingAgainstBaseURL: true)
     guard var urlComponents = components else {
       return nil
     }
-    
     switch self {
     case .topHeadLines:
       urlComponents.queryItems = [URLQueryItem(name: "country", value: region),
-                                  URLQueryItem(name: "apiKey", value: APIConstants.apiKey)]
+                                  URLQueryItem(name: "apikey", value: APIConstants.apiKey)
+      ]
     case .articlesFromCategory(let category):
       urlComponents.queryItems = [URLQueryItem(name: "country", value: region),
-                                  URLQueryItem(name: "apiKey", value: APIConstants.apiKey),
-                                  URLQueryItem(name: "category", value: category)]
-    case .articlesFromSource(let source):
-      urlComponents.queryItems = [URLQueryItem(name: "sources", value: source),
-                                  URLQueryItem(name: "apiKey", value: APIConstants.apiKey)]
-    case .search(let searchFilter):
-      urlComponents.queryItems = [URLQueryItem(name: "q", value: searchFilter.lowercased()),
-                                  URLQueryItem(name: "apiKey", value: APIConstants.apiKey)]
-    case .sources(let country):
-      urlComponents.queryItems = [URLQueryItem(name: "country", value: region),
+                                  URLQueryItem(name: "category", value: category),
+                                  URLQueryItem(name: "apikey", value: APIConstants.apiKey)
+      ]
+    case .sources (let country):
+      urlComponents.queryItems = [URLQueryItem(name: "country", value: country),
                                   URLQueryItem(name: "language", value: countryLang[country]),
-                                  URLQueryItem(name: "apiKey", value: APIConstants.apiKey)]
+                                  URLQueryItem(name: "apikey", value: APIConstants.apiKey)
+      ]
+    case .articlesFromSource (let source):
+      urlComponents.queryItems = [URLQueryItem(name: "sources", value: source),
+                                  /*  URLQueryItem(name: "language", value: locale),*/
+                                  URLQueryItem(name: "apikey", value: APIConstants.apiKey)
+      ]
+    case .search (let searchFilter):
+      urlComponents.queryItems = [URLQueryItem(name: "q", value: searchFilter.lowercased()),
+                                  /*URLQueryItem(name: "language", value: locale),*/
+                                  /* URLQueryItem(name: "country", value: region),*/
+                                  URLQueryItem(name: "apikey", value: APIConstants.apiKey)
+      ]
     }
     return urlComponents.url
   }
   
   var locale: String {
-    return Locale.current.languageCode ?? "en"
+    return  Locale.current.languageCode ?? "en"
   }
   
   var region: String {
-    return Locale.current.regionCode ?? "us"
+    return  Locale.current.regionCode?.lowercased() ?? "us"
   }
   
-  var countryLang: [String: String] {return [
+  init? (index: Int, text: String = "sports") {
+    switch index {
+    case 0: self = .topHeadLines
+    case 1: self = .search(searchFilter: text)
+    case 2: self = .articlesFromCategory(text)
+    case 3: self = .articlesFromSource(text)
+    case 4: self = .sources (country: text)
+    default: return nil
+    }
+  }
+  
+  var countryLang : [String: String]  {return [
     "ar": "es",  // argentina
     "au": "en",  // australia
     "br": "es",  // brazil
@@ -123,7 +124,8 @@ enum Endpoint {
     "sa": "ar",  // saudiArabia
     "us": "en",  // unitedStates
     "za": "en"   // southAfrica
-  ]}
+  ]
+  }
 }
 
 class NewsAPI {
@@ -138,7 +140,7 @@ class NewsAPI {
   }
   
   func fetchArtciles(from endpoint: Endpoint) -> AnyPublisher<[Article], Never> {
-    guard let url = endpoint.absoluteURl else {
+    guard let url = endpoint.absoluteURL else {
       return Just([Article]()).eraseToAnyPublisher()
     }
     return fetch(url)
@@ -149,7 +151,7 @@ class NewsAPI {
   }
   
   func fetchSources(for country: String) -> AnyPublisher<[Source], Never> {
-    guard let url = Endpoint.sources(country: country).absoluteURl else {
+    guard let url = Endpoint.sources(country: country).absoluteURL else {
       return Just([Source]()).eraseToAnyPublisher()
     }
     return fetch(url)
