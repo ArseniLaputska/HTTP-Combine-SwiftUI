@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 struct APIConstants {
-  static let apiKey: String = "f8318663efbb41978ef5b1af11c6176e"
+  static let apiKey: String = "YOUR_API"
   
   static let jsonDecoder: JSONDecoder = {
     let jsonDecoder = JSONDecoder()
