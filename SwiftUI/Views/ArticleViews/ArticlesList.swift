@@ -43,7 +43,7 @@ struct ArticlesList: View {
 
           Divider()
         } //VStack
-        .sheet(isPresented: self.$shouldPresent) {SafariView(url: self.articleURL!)}
+        .sheet(isPresented: self.$shouldPresent) {SafariView(url: URL(string: article.url!))}
       } // foreach
     } // list
   }
@@ -51,7 +51,7 @@ struct ArticlesList: View {
 
 let calendar = Calendar.current
 let calendarComponents = DateComponents(calendar: calendar, year: 2021, month: 10, day: 23)
-let sampleArticlesList = Article(title: "Bitcoin down to 9K Dollars !!! - The Financial Times", description: "Today Bitcoin had smashed up and down to 9 thousands dollar in some minutes and rise back.", author: "John Miller", urlToImage: "https://time.com/nextadvisor/wp-content/uploads/2021/06/na-bitcoins-big-crash-884x584.jpg", publishedAt: calendar.date(from: calendarComponents)!, source: Source(id: "the-verge", name: "the-verge", description: "", country: "us", category: "general", url: "https://cdn.vox-cdn.com"), url: "null")
+let sampleArticlesList = Article(title: "Bitcoin down to 9K Dollars !!! - The Financial Times", description: "Today Bitcoin had smashed up and down to 9 thousands dollar in some minutes and rise back.", author: "John Miller", urlToImage: "https://time.com/nextadvisor/wp-content/uploads/2021/06/na-bitcoins-big-crash-884x584.jpg", publishedAt: calendar.date(from: calendarComponents)!, source: Source(id: "the-verge", name: "the-verge", description: "", country: "us", category: "general", url: "https://f1news.ru"), url: "https://f1news.ru")
 
 struct ArticlesList_Previews: PreviewProvider {
   static var previews: some View {

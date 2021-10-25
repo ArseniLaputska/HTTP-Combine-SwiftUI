@@ -9,11 +9,13 @@ import Foundation
 import Combine
 
 final class ArticlesViewModel: ObservableObject {
+  var newsAPI = NewsAPI.shared
   //input
-  @Published var indexPoint: Int = 0
+  @Published var indexEndpoint: Int = 0
   @Published var searchString: String = "sports"
   //output
   @Published var articles = [Article]()
+  @Published var articlesError: NewsError?
   
   private var validString: AnyPublisher<String, Never> {
     $searchString
@@ -23,14 +25,27 @@ final class ArticlesViewModel: ObservableObject {
   }
   
   init(index: Int = 0, text: String = "sports") {
-    self.indexPoint = index
+    self.indexEndpoint = index
     self.searchString = text
-    Publishers.CombineLatest($indexPoint, validString)
-      .flatMap { (indexPoint, search) -> AnyPublisher<[Article], Never> in
+    Publishers.CombineLatest($indexEndpoint, validString)
+      .setFailureType(to: NewsError.self)
+      .flatMap { (indexPoint, search) -> AnyPublisher<[Article], NewsError> in
+        if 3...30 ~= search.count {
         self.articles = [Article]()
-        return NewsAPI.shared.fetchArtciles(from: Endpoint(index: indexPoint, text: search)!)
+          return self.newsAPI.fetchArticlesErrors(from: Endpoint(index: self.indexEndpoint, text: search)!)
+        } else {
+          return Just([Article]())
+            .setFailureType(to: NewsError.self)
+            .eraseToAnyPublisher()
       }
-      .assign(to: \.articles, on: self)
+  }
+      .sink(receiveCompletion: { [unowned self] (completion) in
+        if case let .failure(error) = completion {
+          self.articlesError = error
+        }
+      }, receiveValue: { [unowned self] in
+        self.articles = $0
+      })
       .store(in: &self.cancellableSet)
   }
   

@@ -130,34 +130,78 @@ enum Endpoint {
 
 class NewsAPI {
   static let shared = NewsAPI()
+  private var subscriptions = Set<AnyCancellable>()
   
-  func fetch<T: Decodable>(_ url: URL) -> AnyPublisher<T, Error> {
+  //Async sampling by URL with catching errors
+  func fetchError<T: Decodable>(_ url: URL) -> AnyPublisher<T, Error> {
     URLSession.shared.dataTaskPublisher(for: url)
-      .map {$0.data}
+      .tryMap { (data, response) -> Data in
+        guard let httpResponse = response as? HTTPURLResponse,
+              200...299 ~= httpResponse.statusCode else {
+          throw NewsError.responseError(((response as? HTTPURLResponse)?.statusCode ?? 500, String(data: data, encoding: .utf8) ?? ""))
+        }
+        return data
+      }
       .decode(type: T.self, decoder: APIConstants.jsonDecoder)
       .receive(on: RunLoop.main)
       .eraseToAnyPublisher()
   }
   
-  func fetchArtciles(from endpoint: Endpoint) -> AnyPublisher<[Article], Never> {
-    guard let url = endpoint.absoluteURL else {
-      return Just([Article]()).eraseToAnyPublisher()
+  //Async sampling articles with catching errors
+  func fetchArticlesErrors(from endpoint: Endpoint) -> AnyPublisher<[Article], NewsError> {
+    Future<[Article], NewsError> { [unowned self] promise in
+      guard let url = endpoint.absoluteURL else {
+        return promise(.failure(.urlError(URLError(.unsupportedURL))))
+      }
+      self.fetchError(url)
+        .tryMap { (result: NewsResponse) -> [Article]  in
+          result.articles
+        }
+        .sink(receiveCompletion: { (completion) in
+          if case let .failure(error) = completion {
+            switch error {
+            case let urlError as URLError:
+              promise(.failure(.urlError(urlError)))
+            case let decodingError as DecodingError:
+              promise(.failure(.decodingError(decodingError)))
+            case let apiError as NewsError:
+              promise(.failure(apiError))
+            default:
+              promise(.failure(.genericError))
+            }
+          }
+        }, receiveValue: { promise(.success($0)) })
+        .store(in: &self.subscriptions)
     }
-    return fetch(url)
-      .map { (response: NewsResponse) -> [Article] in
-        return response.articles }
-      .replaceError(with: [Article]())
-      .eraseToAnyPublisher()
+    .eraseToAnyPublisher()
   }
   
-  func fetchSources(for country: String) -> AnyPublisher<[Source], Never> {
-    guard let url = Endpoint.sources(country: country).absoluteURL else {
-      return Just([Source]()).eraseToAnyPublisher()
+  //Async sampling sources with catching errors
+  func fetchSourcesError(for country: String) -> AnyPublisher<[Source], NewsError> {
+    Future<[Source], NewsError> { [unowned self] promise in
+      guard let url = Endpoint.sources(country: country).absoluteURL else {
+        return promise(.failure(.urlError(URLError(.unsupportedURL))))
+      }
+      self.fetchError(url)
+        .tryMap { (result: SourcesResponse) -> [Source] in
+          result.sources
+        }
+        .sink(receiveCompletion: { (completion) in
+          if case let .failure(error) = completion {
+            switch error {
+            case let urlError as URLError:
+              promise(.failure(.urlError(urlError)))
+            case let decodingError as DecodingError:
+              promise(.failure(.decodingError(decodingError)))
+            case let apiError as NewsError:
+              promise(.failure(apiError))
+            default:
+              promise(.failure(.genericError))
+            }
+          }
+        }, receiveValue: { promise(.success($0)) })
+        .store(in: &self.subscriptions)
     }
-    return fetch(url)
-      .map { (response: SourcesResponse) -> [Source] in
-        return response.sources }
-      .replaceError(with: [Source]())
-      .eraseToAnyPublisher()
+    .eraseToAnyPublisher()
   }
 }
