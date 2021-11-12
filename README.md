@@ -15,6 +15,6 @@ The laconic **SwiftUI** was chosen to visually display our data.
 <img width="200" alt="Снимок экрана 2021-10-25 в 13 26 07" src="https://user-images.githubusercontent.com/69910183/138756774-7a13ac54-61a7-41c8-8bed-873d80ce9191.png">
 <img width="200" alt="Снимок экрана 2021-10-25 в 13 28 37" src="https://user-images.githubusercontent.com/69910183/138756786-e339b9f8-161c-4872-9643-06235a576ab2.png">
 
-> It's how our network layer catch the errors.
+> It's the way how our network layer catch the errors.
 
 <img width="200" alt="Снимок экрана 2021-10-25 в 13 35 23" src="https://user-images.githubusercontent.com/69910183/138756790-302c4e67-fa33-4567-8b17-3c24dfa63087.png">
