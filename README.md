@@ -1,4 +1,4 @@
-# SwiftyNews
+# Swifty News
 ### The main goal was to show how Combine and SwiftUI work together using the MVVM pattern.
 _Also no third-party packages were used in this application._
 
