@@ -1,6 +1,6 @@
 # Swifty News
 ### The main goal was to show how Combine and SwiftUI work together using the MVVM pattern.
-_Also no third-party packages were used in this application._
+_No third-party packages were used in this application._
 
 The underlying **Combine framework** was used to write the network layer (including error handling) and run the application's business logic. 
 The laconic **SwiftUI** was chosen to visually display our data.
